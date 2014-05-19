@@ -41,13 +41,13 @@ trap ctrl_c INT
 IFS=$'\n'
 declare -a directories
 directories=( $(find "$folder" -type f -iname '*.m4a' -exec dirname {} \; |uniq) )
-declare -a playlist
-declare -a restlist
 for i in "${directories[@]}"; do
+   declare -a playlist
+   declare -a restlist
    fp=$(readlink -f $i)
    curdir=${fp##*/}
    dstfile="${curdir}.mka"
-   playlist=( $(find $fp -iname '*.m4a' -exec readlink -f {} \; | sort) )
+   playlist=( $(find "$fp" -iname '*.m4a' -exec readlink -f {} \; | sort) )
    first="${playlist[0]}"
    unset playlist[0]
    counter=0
@@ -58,5 +58,6 @@ for i in "${directories[@]}"; do
    echo "Creating ${dstfile}"
    $command -q -o ${workdir}/${dstfile} -a 0 -D -S -T --no-global-tags --no-chapters "$first" --no-chapters "${restlist[@]/#/+}" --clusters-in-meta-seek
    mv "${workdir}/${dstfile}" "$fp"
+   unset playlist
+   unset restlist
 done
-
