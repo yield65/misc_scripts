@@ -1,0 +1,99 @@
+btcwallet() {
+wget -qO- blockchain.info/rawaddr/3F636VrPCdnbfrdP5kS4C6fHWVBffXNKCu 2>&1 | grep -Po '"final_balance":\K[0-9]+' | awk '{s=$1/100000000} END {printf "%0.8f\n", s}'
+}
+
+running() {
+ps -p "$@" -o etime=
+}
+
+unrarx() {
+for x in *.rar;do unrar x -o- -inul "$x";done
+}
+
+mountenc() {
+echo "$@" | /usr/bin/encfs -S /media/silver/.encrypted /home/yield/secfiles
+}
+
+get-loudness() {
+command mplayer -quiet -vc null -vo null -ao pcm:fast:file=/dev/null -af stats "$@"
+}
+
+fileName(){ echo ${1%.*}; }
+
+unsharp() { printf "sharp: unsharp=l3x3:0.5:c3x3:0.5\nblur: unsharp=l3x3:-0.5:c3x3:-0.5\n" }
+
+# fix zsh annoying history behavior
+h() { if [ -z "$*" ]; then history 1; else history 1 | egrep "$@"; fi; }
+
+pip3-in() { pip3 install --install-option="--user" "$*" }
+
+clear_semicolon() { sed -i~ -e 's/;.*$//' -e '/^$/d' "$@" }
+
+clearfile (){
+perl -i~ -wne'print unless /^\s*(?:#|$)/' "$@"
+}
+
+listext() { find "$@" -type f | perl -ne 'print $1 if m/\.([^.\/]+)$/' | sort -u }
+
+# findsize() { find "$1" -name $2 -exec ls -l {} \; | awk '{ Total += $5} END { print Total }' | numfmt --to=iec-i --suffix=B --padding=7 }
+
+findsize() { find "$1" -type f -iname $2 -print0 | xargs -0 du -ch | grep -P '\ttotal$' }
+
+stop() { 
+if $(killall -STOP "$1"); then 
+echo "[+] $1 successfully paused!"
+else 
+echo "[-] Failed to pause $1"
+fi 
+}
+ 
+start() { 
+if $(killall -CONT "$1"); then 
+echo "[+] $1 successfully unpaused!" 
+else 
+echo "[-] Failed to unpause $1" 
+fi 
+}
+
+countFiles () {
+    # call the recursive function, throw away stdout and send stderr to stdout
+    # then sort numerically
+    countFiles_rec "$1" 2>&1 >/dev/null | sort -nr
+}
+
+countFiles_rec () {
+    local -i nfiles 
+    dir="$1"
+
+    # count the number of files in this directory only
+    nfiles=$(find "$dir" -mindepth 1 -maxdepth 1 -type f -print | wc -l)
+
+    # loop over the subdirectories of this directory
+    while IFS= read -r subdir; do
+
+        # invoke the recursive function for each one 
+        # save the output in the positional parameters
+        set -- $(countFiles_rec "$subdir")
+
+        # accumulate the number of files found under the subdirectory
+        (( nfiles += $1 ))
+
+    done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d -print)
+
+    # print the number of files here, to both stdout and stderr
+    printf "%d %s\n" $nfiles "$dir" | tee /dev/stderr
+}
+
+utc_date () {
+date -u +"%A %d %B %Y - %H:%M:%S %Z" |xclip -sel c
+}
+
+julian () {
+date -u +"%j" | xclip -sel c
+}
+
+mkv-to-mp4 () {
+for i in *.mkv; do
+    ffmpeg -i "$i" -movflags +faststart -codec copy "${i%.*}.mp4"
+done
+}
